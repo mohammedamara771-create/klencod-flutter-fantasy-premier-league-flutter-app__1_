@@ -1,206 +1,126 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
-import { fdrClass, playerPhoto, posColor, teamBadge, teamColor } from "@/lib/fpl/format";
+import type { ReactNode } from "react";
+import { POSITIONS, money, playerPhoto, teamBadge } from "@/lib/format";
+import type { PlayerRow } from "@/lib/queries";
 
-export function Card({
-  children,
-  className = "",
-  as = "div",
+export function StatCard({
+  title,
+  value,
+  hint,
+  accent = "emerald",
 }: {
-  children: ReactNode;
-  className?: string;
-  as?: "div" | "section" | "article";
+  title: string;
+  value: ReactNode;
+  hint?: string;
+  accent?: "emerald" | "cyan" | "amber" | "rose";
 }) {
-  const Tag = as;
-  return <Tag className={`glass rounded-3xl p-4 ${className}`}>{children}</Tag>;
+  const accents: Record<string, string> = {
+    emerald: "from-emerald-400/20 text-emerald-300",
+    cyan: "from-cyan-400/20 text-cyan-300",
+    amber: "from-amber-400/20 text-amber-300",
+    rose: "from-rose-400/20 text-rose-300",
+  };
+  return (
+    <div
+      className={`card bg-gradient-to-bl ${accents[accent]} to-transparent p-4`}
+    >
+      <p className="text-xs text-slate-300">{title}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      {hint ? <p className="mt-1 text-[11px] text-slate-400">{hint}</p> : null}
+    </div>
+  );
 }
 
-export function SectionTitle({
+export function Panel({
   title,
   subtitle,
+  children,
   action,
 }: {
   title: string;
   subtitle?: string;
+  children: ReactNode;
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-3 flex items-end justify-between gap-3">
-      <div>
-        <h2 className="text-base font-extrabold tracking-tight text-white sm:text-lg">{title}</h2>
-        {subtitle ? <p className="mt-0.5 text-[11px] text-white/50">{subtitle}</p> : null}
+    <section className="card p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div>
+          <h2 className="text-base font-bold text-white">{title}</h2>
+          {subtitle ? (
+            <p className="text-[11px] text-slate-400">{subtitle}</p>
+          ) : null}
+        </div>
+        {action}
       </div>
-      {action}
-    </div>
-  );
-}
-
-export function Badge({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${className}`}>
       {children}
-    </span>
+    </section>
   );
 }
 
-export function PositionBadge({ position }: { position: string }) {
-  const map: Record<string, string> = { GKP: "حارس", DEF: "مدافع", MID: "وسط", FWD: "مهاجم" };
-  return <Badge className={posColor(position)}>{map[position] ?? position}</Badge>;
-}
-
-export function StatTile({
-  label,
-  value,
-  hint,
-  accent = "text-white",
-}: {
-  label: string;
-  value: ReactNode;
-  hint?: string;
-  accent?: string;
-}) {
-  return (
-    <div className="glass rounded-2xl px-3 py-2.5">
-      <p className="text-[10px] font-semibold text-white/45">{label}</p>
-      <p className={`mt-0.5 text-lg font-extrabold leading-tight ${accent}`}>{value}</p>
-      {hint ? <p className="text-[10px] text-white/35">{hint}</p> : null}
-    </div>
-  );
-}
-
-export function Bar({
-  value,
-  max,
-  color = "bg-lime",
-  height = "h-1.5",
-}: {
-  value: number;
-  max: number;
-  color?: string;
-  height?: string;
-}) {
-  const width = max > 0 ? Math.max(2, Math.min(100, (value / max) * 100)) : 0;
-  return (
-    <div className={`w-full overflow-hidden rounded-full bg-white/10 ${height}`}>
-      <div className={`${height} rounded-full ${color}`} style={{ width: `${width}%` }} />
-    </div>
-  );
-}
-
-export function FdrPill({ difficulty, children }: { difficulty: number; children?: ReactNode }) {
-  return (
-    <span className={`inline-flex min-w-7 items-center justify-center rounded-lg border px-1.5 py-0.5 text-[10px] font-extrabold ${fdrClass(difficulty)}`}>
-      {children ?? difficulty}
-    </span>
-  );
-}
-
-export function TeamBadge({ code, name, size = 50 }: { code: number; name?: string; size?: 50 | 70 }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={teamBadge(code, size)}
-      alt={name ?? "شعار النادي"}
-      width={28}
-      height={28}
-      className="h-7 w-7 object-contain"
-      loading="lazy"
-    />
-  );
-}
-
-export function PlayerAvatar({
-  photo,
-  name,
-  position,
-  teamShort,
-  size = 40,
-}: {
-  photo: string | null;
-  name: string;
-  position?: string;
-  teamShort?: string;
-  size?: number;
-}) {
-  const src = playerPhoto(photo);
-  const color = teamShort ? teamColor(teamShort) : "#7c5cff";
+export function PositionTag({ type }: { type: number }) {
+  const pos = POSITIONS[type];
+  if (!pos) return null;
   return (
     <span
-      className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10"
-      style={{ width: size, height: size, background: `linear-gradient(150deg, ${color}66, ${color}18)` }}
+      className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${pos.color}`}
     >
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={name} width={size} height={size} className="h-full w-full object-cover" loading="lazy" />
-      ) : (
-        <span className="text-[10px] font-extrabold text-white/80">{position ?? name.slice(0, 2)}</span>
-      )}
+      {pos.en}
     </span>
   );
 }
 
-export function EmptyState({
-  title,
-  message,
-  icon = "📊",
-  children,
+export function PlayerRowItem({
+  player,
+  metric,
+  metricLabel,
+  rank,
 }: {
-  title: string;
-  message?: string;
-  icon?: string;
-  children?: ReactNode;
-}) {
-  return (
-    <div className="glass flex flex-col items-center gap-2 rounded-3xl px-5 py-10 text-center">
-      <span className="text-3xl">{icon}</span>
-      <p className="text-sm font-bold text-white">{title}</p>
-      {message ? <p className="max-w-xs text-xs leading-5 text-white/50">{message}</p> : null}
-      {children}
-    </div>
-  );
-}
-
-export function PillLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: ReactNode;
+  player: PlayerRow;
+  metric: ReactNode;
+  metricLabel?: string;
+  rank?: number;
 }) {
   return (
     <Link
-      href={href}
-      className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
-        active ? "bg-lime text-black lime-glow" : "glass text-white/70 hover:text-white"
-      }`}
+      href={`/players/${player.id}`}
+      className="flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-white/5"
     >
-      {children}
+      {rank ? (
+        <span className="w-5 text-center text-xs font-bold text-slate-400">
+          {rank}
+        </span>
+      ) : null}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={playerPhoto(player.code)}
+        alt={player.webName}
+        className="h-9 w-9 rounded-full bg-white/10 object-cover"
+        loading="lazy"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-white">
+          {player.webName}
+        </p>
+        <p className="flex items-center gap-1.5 text-[11px] text-slate-400">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={teamBadge(player.teamCode)}
+            alt={player.teamShort}
+            className="h-3.5 w-3.5"
+            loading="lazy"
+          />
+          {player.teamShort}
+          <PositionTag type={player.elementType} />
+          <span>£{money(player.nowCost)}</span>
+        </p>
+      </div>
+      <div className="text-left">
+        <p className="text-sm font-black text-emerald-300">{metric}</p>
+        {metricLabel ? (
+          <p className="text-[10px] text-slate-500">{metricLabel}</p>
+        ) : null}
+      </div>
     </Link>
   );
-}
-
-export function Notice({ children, tone = "info" }: { children: ReactNode; tone?: "info" | "warn" }) {
-  return (
-    <div
-      className={`rounded-2xl border px-3 py-2 text-[11px] leading-5 ${
-        tone === "warn"
-          ? "border-amber-400/30 bg-amber-400/10 text-amber-200"
-          : "border-sky-400/25 bg-sky-400/10 text-sky-200"
-      }`}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function StatValue({ value, digits = 1 }: { value: number; digits?: number }) {
-  return <span className="tabular-nums">{value.toFixed(digits)}</span>;
 }

@@ -1,0 +1,70 @@
+name: بناء تطبيق APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: جلب الكود
+        uses: actions/checkout@v4
+
+      - name: تهيئة Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: تهيئة Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: التحقق من وجود pubspec.yaml في الجذر
+        run: |
+          if [ ! -f pubspec.yaml ]; then
+            echo "::error::pubspec.yaml غير موجود في جذر المستودع. ارفع محتويات المجلد وليس المجلد نفسه."
+            ls -la
+            exit 1
+          fi
+          cat pubspec.yaml
+
+      - name: إعادة توليد مجلد android بما يطابق إصدار Flutter الحالي
+        run: |
+          cp -r lib /tmp/lib_backup
+          cp pubspec.yaml /tmp/pubspec_backup.yaml
+          rm -rf android
+          flutter create --org com.fplstats --project-name fpl_stats --platforms=android .
+          rm -rf lib
+          cp -r /tmp/lib_backup lib
+          cp /tmp/pubspec_backup.yaml pubspec.yaml
+
+      - name: إضافة صلاحية الإنترنت إلى AndroidManifest
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          if ! grep -q "android.permission.INTERNET" "$MANIFEST"; then
+            sed -i '0,/<application/s|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' "$MANIFEST"
+          fi
+          cat "$MANIFEST"
+
+      - name: تنزيل الحزم
+        run: flutter pub get
+
+      - name: تحليل الكود (غير مُلزِم)
+        run: flutter analyze || true
+
+      - name: بناء APK
+        run: flutter build apk --release
+
+      - name: رفع ملف APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fpl-stats-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

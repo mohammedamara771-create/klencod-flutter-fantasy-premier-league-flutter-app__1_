@@ -1,67 +1,34 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Cairo } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
-import { AppShell } from "@/components/AppShell";
-import { getGameData } from "@/lib/fpl/data";
-import { currentEvent, nextEvent } from "@/lib/fpl/select";
-
-const cairo = Cairo({
-  subsets: ["arabic", "latin"],
-  variable: "--font-cairo",
-  weight: ["400", "600", "700", "800", "900"],
-  display: "swap",
-});
+import NavBar from "@/components/nav-bar";
 
 export const metadata: Metadata = {
-  title: "فانتازي أرينا | كل إحصاءات فانتازي الدوري الإنجليزي",
+  title: "فانتازي بريميرليغ | مركز الإحصائيات",
   description:
-    "تطبيق عربي شامل لفانتازي الدوري الإنجليزي: إحصاءات اللاعبين، الفورمة، xG/xA، التشكيلات، المباريات، ومتابعة فريقك ببيانات رسمية من fantasy.premierleague.com.",
-  applicationName: "Fantasy Arena",
-  keywords: ["فانتازي", "الدوري الإنجليزي", "FPL", "إحصاءات", "فانتازي أرينا"],
-  manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.png", apple: "/icon.png" },
-  openGraph: {
-    title: "فانتازي أرينا | كل إحصاءات فانتازي الدوري الإنجليزي",
-    description: "قاعدة لاعبين كاملة، فورمة، xG/xA، مباريات، متابعة فريقك وبناء تشكيلة.",
-    type: "website",
-  },
+    "تطبيق متكامل لإحصائيات فانتازي الدوري الإنجليزي الممتاز، بيانات مباشرة من الواجهة الرسمية FPL API.",
 };
 
-export const viewport: Viewport = {
-  themeColor: "#07060f",
-  width: "device-width",
-  initialScale: 1,
-};
-
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  let header: {
-    gameweekName?: string;
-    deadline?: string;
-    averageScore?: number;
-    source: "live" | "cache";
-    updatedAt: string;
-  } = { source: "live", updatedAt: new Date().toISOString() };
-
-  try {
-    const data = await getGameData();
-    const current = currentEvent(data.events);
-    const upcoming = nextEvent(data.events);
-    header = {
-      gameweekName: current?.name,
-      deadline: upcoming?.deadline ?? current?.deadline,
-      averageScore: current?.averageScore,
-      source: data.source,
-      updatedAt: data.updatedAt,
-    };
-  } catch {
-    header = { source: "cache", updatedAt: new Date().toISOString() };
-  }
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className={cairo.variable}>
-      <body className="bg-ink font-sans text-white antialiased">
-        <AppShell {...header}>{children}</AppShell>
+    <html lang="ar" dir="rtl">
+      <body className="min-h-screen text-slate-100 antialiased">
+        <NavBar />
+        <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-6">{children}</main>
+        <footer className="border-t border-white/10 bg-black/30 py-6 text-center text-xs text-slate-400">
+          <p>
+            البيانات مصدرها الواجهة الرسمية{" "}
+            <Link
+              href="https://fantasy.premierleague.com/api/bootstrap-static/"
+              target="_blank"
+              className="text-emerald-300 underline"
+            >
+              fantasy.premierleague.com/api
+            </Link>{" "}
+            — هذا المشروع غير تابع رسمياً للدوري الإنجليزي الممتاز.
+          </p>
+        </footer>
       </body>
     </html>
   );
